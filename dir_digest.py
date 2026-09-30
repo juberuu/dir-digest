@@ -28,11 +28,18 @@ def relative_depth(root: Path, current: Path) -> int:
     return len(rel.parts)
 
 
-def walk_directory(root: Path, max_depth: int | None = None) -> tuple[int, int, int]:
+def apply_ignores(dirnames: list[str], filenames: list[str], ignore: set[str]) -> None:
+    dirnames[:] = [name for name in dirnames if name not in ignore]
+    filenames[:] = [name for name in filenames if name not in ignore]
+
+
+def walk_directory(root: Path, max_depth: int | None = None, ignore: set[str] | None = None) -> tuple[int, int, int]:
+    skip = ignore or set()
     files = 0
     dirs = 0
     total_bytes = 0
     for dirpath, dirnames, filenames in os.walk(root):
+        apply_ignores(dirnames, filenames, skip)
         depth = relative_depth(root, Path(dirpath))
         if max_depth is not None and depth >= max_depth:
             dirnames[:] = []
@@ -47,9 +54,11 @@ def walk_directory(root: Path, max_depth: int | None = None) -> tuple[int, int, 
     return files, dirs, total_bytes
 
 
-def print_tree(root: Path, max_entries: int = 40, max_depth: int | None = None) -> None:
+def print_tree(root: Path, max_entries: int = 40, max_depth: int | None = None, ignore: set[str] | None = None) -> None:
+    skip = ignore or set()
     shown = 0
     for dirpath, dirnames, filenames in os.walk(root):
+        apply_ignores(dirnames, filenames, skip)
         depth = relative_depth(root, Path(dirpath))
         if max_depth is not None and depth >= max_depth:
             dirnames[:] = []
@@ -73,6 +82,7 @@ def main() -> int:
     parser.add_argument("path", nargs="?", default=".", help="Directory to scan")
     parser.add_argument("--json", action="store_true", help="Print a JSON summary")
     parser.add_argument("--max-depth", type=int, default=None, help="Limit directory walk depth")
+    parser.add_argument("--ignore", action="append", default=[], help="Directory or file names to skip")
     args = parser.parse_args()
 
     root = Path(args.path).resolve()
@@ -80,7 +90,8 @@ def main() -> int:
         print(f"Not a directory: {root}")
         return 1
 
-    files, dirs, total_bytes = walk_directory(root, args.max_depth)
+    ignore = set(args.ignore)
+    files, dirs, total_bytes = walk_directory(root, args.max_depth, ignore)
     if args.json:
         print(json.dumps({
             "path": str(root),
@@ -88,6 +99,7 @@ def main() -> int:
             "directories": dirs,
             "total_bytes": total_bytes,
             "max_depth": args.max_depth,
+            "ignore": sorted(ignore),
         }, indent=2))
         return 0
 
@@ -96,7 +108,7 @@ def main() -> int:
     print(f"Directories: {dirs}")
     print(f"Total size: {human_size(total_bytes)}")
     print()
-    print_tree(root, max_depth=args.max_depth)
+    print_tree(root, max_depth=args.max_depth, ignore=ignore)
     return 0
 
 

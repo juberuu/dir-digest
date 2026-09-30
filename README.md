@@ -6,6 +6,8 @@ A small command-line tool that prints a readable summary of a directory: file co
 
 ```bash
 python dir_digest.py .
+python dir_digest.py . --json
+python dir_digest.py . --max-depth 2 --ignore .git --ignore __pycache__
 ```
 
 ## Requirements
