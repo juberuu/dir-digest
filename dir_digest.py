@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 
@@ -57,6 +58,7 @@ def print_tree(root: Path, max_entries: int = 40) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Summarize a directory tree.")
     parser.add_argument("path", nargs="?", default=".", help="Directory to scan")
+    parser.add_argument("--json", action="store_true", help="Print a JSON summary")
     args = parser.parse_args()
 
     root = Path(args.path).resolve()
@@ -65,6 +67,15 @@ def main() -> int:
         return 1
 
     files, dirs, total_bytes = walk_directory(root)
+    if args.json:
+        print(json.dumps({
+            "path": str(root),
+            "files": files,
+            "directories": dirs,
+            "total_bytes": total_bytes,
+        }, indent=2))
+        return 0
+
     print(f"Path: {root}")
     print(f"Files: {files}")
     print(f"Directories: {dirs}")
