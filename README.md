@@ -13,3 +13,13 @@ python dir_digest.py . --max-depth 2 --ignore .git --ignore __pycache__
 ## Requirements
 
 Python 3.10 or newer. No third-party packages.
+
+## Install
+
+Clone the repo and run the script from the project root:
+
+```bash
+git clone https://github.com/juberuu/dir-digest.git
+cd dir-digest
+python dir_digest.py .
+```
